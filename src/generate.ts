@@ -120,12 +120,18 @@ type NoteThumbnailResources = {
 }
 
 async function buildThumbnail(notes: NoteThumbnailResources, directionalLeft: ImageAsset, directionalRight: ImageAsset, stage: ImageAsset, line: ImageAsset): Promise<Buffer> {
-    const width = (480 * 1.35) / 0.875
+    const fieldX = 0.65
+    const fieldY = 1.75
+    const fieldWidth = 4.7
+    const fieldHeight = 3.3
+    const fieldLeft = Math.round(fieldX * 80)
+    const fieldPixelWidth = Math.round(fieldWidth * 80)
+    const width = (fieldPixelWidth * 1.35) / 0.875
     const height = (width * line.height) / line.width
     const resizedLine = await resize(line, Math.round(width), Math.round(height), 'lanczos3')
-    const lineLeft = Math.round((width - 480) / 2)
+    const lineLeft = Math.round((width - fieldPixelWidth) / 2)
     const croppedLine = await toSharp(resizedLine)
-        .extract({ left: lineLeft, top: 0, width: 480, height: Math.round(height) })
+        .extract({ left: lineLeft, top: 0, width: fieldPixelWidth, height: Math.round(height) })
         .png()
         .toBuffer()
 
@@ -148,14 +154,14 @@ async function buildThumbnail(notes: NoteThumbnailResources, directionalLeft: Im
 
     return toSharp(thumb)
         .composite([
-            await composition(stage, 0, 1.5, 6, 4),
-            { input: croppedLine, left: 0, top: 440 - Math.round(height / 2) },
-            await composition(requireThumbSprite(notes, 'note_normal_3'), 0.45, 0.2, 1.5, 0.75),
-            await composition(requireThumbSprite(notes, 'note_skill_3'), 2.25, 0.2, 1.5, 0.75),
-            await composition(requireThumbSprite(notes, 'note_flick_3'), 4.05, 0.2, 1.5, 0.75),
-            await composition(requireThumbSprite(notes, 'note_long_3'), 0.45, 1.0, 1.5, 0.75),
-            await composition(directionalLeft, 2.25, 1.0, 1.5, 0.75),
-            await composition(directionalRight, 4.05, 1.0, 1.5, 0.75),
+            await composition(stage, fieldX, fieldY, fieldWidth, fieldHeight),
+            { input: croppedLine, left: fieldLeft, top: Math.round((fieldY + fieldHeight) * 80) - Math.round(height / 2) },
+            await composition(requireThumbSprite(notes, 'note_normal_3'), 0.15, 0.2, 1.35, 0.68),
+            await composition(requireThumbSprite(notes, 'note_skill_3'), 1.55, 0.2, 1.35, 0.68),
+            await composition(requireThumbSprite(notes, 'note_flick_3'), 2.95, 0.2, 1.35, 0.68),
+            await composition(requireThumbSprite(notes, 'note_long_3'), 4.35, 0.2, 1.35, 0.68),
+            await composition(directionalLeft, 0.35, 1.15, 1.45, 0.72),
+            await composition(directionalRight, 4.2, 1.15, 1.45, 0.72),
         ])
         .png({ compressionLevel: 9 })
         .toBuffer()
