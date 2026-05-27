@@ -20,12 +20,15 @@ export async function getNoteSkinResources(id: string, server: Server, isHabahir
     const bundleFile = requireManifestFile(manifest, `ingameskin-noteskin-${id}.bundle`)
     const atlasFiles = manifest.filter((file) => file.toLowerCase().endsWith('.png'))
 
+    const longLineFile = requireManifestFile(manifest, 'longNoteLine.png')
+    const longLineSpecialFile = optionalManifestFile(manifest, 'longNoteLine2.png') ?? longLineFile
+
     const [spritesRaw, bundleRaw, atlasImages, longLine, longLineSpecial, simLine] = await Promise.all([
         fetchText('noteskin', server, id, spritesFile),
         fetchText('noteskin', server, id, bundleFile),
         Promise.all(atlasFiles.map(async (file) => [file.toLowerCase(), await fetchImageAsset('noteskin', server, id, file)] as const)),
-        fetchImageAsset('noteskin', server, id, requireManifestFile(manifest, 'longNoteLine.png')),
-        fetchImageAsset('noteskin', server, id, requireManifestFile(manifest, 'longNoteLine2.png')),
+        fetchImageAsset('noteskin', server, id, longLineFile),
+        fetchImageAsset('noteskin', server, id, longLineSpecialFile),
         fetchImageAsset('noteskin', server, id, requireManifestFile(manifest, 'simultaneous_line.png')),
     ])
 
@@ -42,6 +45,11 @@ export async function getNoteSkinResources(id: string, server: Server, isHabahir
         longLineSpecial,
         simLine,
     }
+}
+
+function optionalManifestFile(files: readonly string[], fileName: string): string | undefined {
+    const normalized = fileName.toLowerCase()
+    return files.find((file) => file.toLowerCase() === normalized)
 }
 
 export function buildNoteSkinSprites(resources: NoteSkinResources): SpriteAsset[] {
