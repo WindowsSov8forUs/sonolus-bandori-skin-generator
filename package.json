@@ -9,6 +9,7 @@
     "typecheck": "tsc -p .",
     "start": "node dist/index.js",
     "generate": "npm run build && npm start",
+    "generate:fast": "npm run build && node dist/index.js --concurrency 8",
     "generate:sample": "npm run build && node dist/index.js --sample",
     "list-plans": "npm run build && node dist/index.js --list-plans"
   },
