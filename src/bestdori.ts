@@ -1,4 +1,5 @@
 import { bestdoriRoot } from './constants.js'
+import { fetchWithRetry } from './fetch.js'
 import { imageFromBuffer } from './image.js'
 import type { ImageAsset, Server } from './types.js'
 
@@ -14,9 +15,6 @@ const roots = {
         manifest: '/api/explorer/{server}/assets/ingameskin/fieldskin',
     },
 } as const
-
-const fetchAttempts = 3
-const fetchTimeoutMs = 90_000
 
 export async function fetchManifest(namespace: AssetNamespace, server: Server, ripName: string): Promise<string[]> {
     const url = `${bestdoriRoot}${roots[namespace].manifest.replace('{server}', server)}/${ripName}.json`
@@ -57,24 +55,4 @@ export function requireManifestFile(files: readonly string[], fileName: string):
 
 function encodePathFile(fileName: string): string {
     return fileName.split('/').map(encodeURIComponent).join('/')
-}
-
-async function fetchWithRetry(url: string): Promise<Response> {
-    let lastError: unknown
-    for (let attempt = 1; attempt <= fetchAttempts; attempt++) {
-        try {
-            const response = await fetch(url, { signal: AbortSignal.timeout(fetchTimeoutMs) })
-            if (response.ok || response.status < 500 || attempt === fetchAttempts) return response
-            lastError = new Error(`fetch failed ${response.status}: ${url}`)
-        } catch (error) {
-            lastError = error
-            if (attempt === fetchAttempts) break
-        }
-        await delay(500 * attempt)
-    }
-    throw lastError
-}
-
-function delay(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms))
 }

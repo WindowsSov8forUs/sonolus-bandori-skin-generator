@@ -1,4 +1,5 @@
-import { servers } from './constants.js'
+import { bestdoriRoot, servers } from './constants.js'
+import { fetchWithRetry } from './fetch.js'
 import type { GenerationPlan, Server, SkinSource } from './types.js'
 
 type BestdoriInfoEntry = {
@@ -23,10 +24,6 @@ type SkinSourceGroup = {
     directionals: SkinSource[]
     fields: SkinSource[]
 }
-
-const bestdoriRoot = 'https://bestdori.com'
-const fetchAttempts = 3
-const fetchTimeoutMs = 90_000
 
 export async function getGenerationPlans(sample: boolean): Promise<GenerationPlan[]> {
     const catalog = await getCatalog()
@@ -168,24 +165,4 @@ async function fetchJson<T>(path: string): Promise<T> {
     const response = await fetchWithRetry(`${bestdoriRoot}${path}`)
     if (!response.ok) throw new Error(`fetch failed ${response.status}: ${path}`)
     return (await response.json()) as T
-}
-
-async function fetchWithRetry(url: string): Promise<Response> {
-    let lastError: unknown
-    for (let attempt = 1; attempt <= fetchAttempts; attempt++) {
-        try {
-            const response = await fetch(url, { signal: AbortSignal.timeout(fetchTimeoutMs) })
-            if (response.ok || response.status < 500 || attempt === fetchAttempts) return response
-            lastError = new Error(`fetch failed ${response.status}: ${url}`)
-        } catch (error) {
-            lastError = error
-            if (attempt === fetchAttempts) break
-        }
-        await delay(500 * attempt)
-    }
-    throw lastError
-}
-
-function delay(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms))
 }

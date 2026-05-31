@@ -1,11 +1,10 @@
 import fs from 'fs-extra'
 import os from 'node:os'
 import { getGenerationPlans, getGenerationPlanSummary } from './catalog.js'
-import { createGenerationResourceCache, generateSkin, skinName } from './generate.js'
+import { createGenerationResourceCache, generateSkin, isSkinGenerated, skinName } from './generate.js'
 import { verifyOutput } from './verify.js'
 
 const outputRoot = 'output'
-const skinsRoot = `${outputRoot}/skins`
 const sample = process.argv.includes('--sample')
 const listPlans = process.argv.includes('--list-plans')
 const concurrency = getConcurrency()
@@ -16,19 +15,29 @@ if (listPlans) {
     process.exit(0)
 }
 
-await fs.emptyDir(outputRoot)
+await fs.ensureDir(outputRoot)
 
 const plans = await getGenerationPlans(sample)
 if (plans.length === 0) throw new Error('no generation plans found')
 
-console.log(`Generating ${plans.length} skin pack(s) into ${skinsRoot} with concurrency ${concurrency}`)
+console.log(`Generating ${plans.length} skin pack(s) into ${outputRoot} with concurrency ${concurrency}`)
 const cache = createGenerationResourceCache()
 await runConcurrent(plans, concurrency, async (plan, index) => {
-    console.log(`[${index + 1}/${plans.length}] ${skinName(plan)}`)
-    await generateSkin(plan, skinsRoot, cache)
+    const name = skinName(plan)
+    if (await isSkinGenerated(plan, outputRoot)) {
+        console.log(`[${index + 1}/${plans.length}] ${name} (skip)`)
+        return
+    }
+
+    console.log(`[${index + 1}/${plans.length}] ${name}`)
+    try {
+        await generateSkin(plan, outputRoot, cache)
+    } catch (error) {
+        throw new Error(`failed to generate ${name}: ${describeError(error)}`, { cause: error })
+    }
 })
 
-await verifyOutput(outputRoot, plans.length)
+await verifyOutput(outputRoot, plans.map(skinName))
 console.log(`Generated ${plans.length} skin pack(s) into ${outputRoot}`)
 
 function getConcurrency(): number {
@@ -49,4 +58,9 @@ async function runConcurrent<T>(items: readonly T[], concurrency: number, worker
         }
     })
     await Promise.all(workers)
+}
+
+function describeError(error: unknown): string {
+    if (error instanceof Error) return `${error.name}: ${error.message}`
+    return String(error)
 }

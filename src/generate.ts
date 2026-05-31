@@ -27,6 +27,7 @@ export function createGenerationResourceCache(): GenerationResourceCache {
 
 export async function generateSkin(plan: GenerationPlan, outputRoot: string, cache = createGenerationResourceCache()): Promise<void> {
     const name = skinName(plan)
+    const outputDir = path.join(outputRoot, name)
 
     const [noteResources, directionalResources, fieldResources] = await Promise.all([
         getCached(cache.notes, `${plan.rhythm.server}:${plan.rhythm.id}:${plan.mode === 'habahiro'}`, () => getNoteSkinResources(plan.rhythm.id, plan.rhythm.server, plan.mode === 'habahiro')),
@@ -55,12 +56,19 @@ export async function generateSkin(plan: GenerationPlan, outputRoot: string, cac
 
     assertNoJudgeSprites(dataObject)
 
-    const outputDir = path.join(outputRoot, name)
+    await fs.remove(outputDir)
     await fs.ensureDir(outputDir)
     await fs.writeJson(path.join(outputDir, 'item.json'), buildItem(plan), { spaces: 4 })
     await fs.writeFile(path.join(outputDir, 'data'), data)
     await fs.writeFile(path.join(outputDir, 'texture.png'), texture)
     await fs.writeFile(path.join(outputDir, 'thumbnail.png'), thumbnail)
+}
+
+export async function isSkinGenerated(plan: GenerationPlan, outputRoot: string): Promise<boolean> {
+    const outputDir = path.join(outputRoot, skinName(plan))
+    const requiredFiles = ['item.json', 'data', 'texture.png', 'thumbnail.png']
+    const exists = await Promise.all(requiredFiles.map((file) => fs.pathExists(path.join(outputDir, file))))
+    return exists.every(Boolean)
 }
 
 function getCached<T>(cache: Map<string, Promise<T>>, key: string, getValue: () => Promise<T>): Promise<T> {
