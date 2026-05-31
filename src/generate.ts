@@ -100,24 +100,35 @@ function buildItem(plan: GenerationPlan) {
         `DirectionalFlickSkin：${plan.directional.id}`,
         `FieldSkin：${plan.field.id}`,
     ].join('\n')
+    const descriptionZht = [
+        '由 sonolus-bandori-skin-generator 生成。',
+        `模式：${plan.mode}`,
+        `RhythmSkin：${plan.rhythm.id}`,
+        `DirectionalFlickSkin：${plan.directional.id}`,
+        `FieldSkin：${plan.field.id}`,
+    ].join('\n')
 
     return {
         version: 4,
         title: {
             en: title,
+            zht: title,
             zhs: title,
         },
         subtitle: {
             en: 'BanG Dream! Girls Band Party!',
+            zht: 'BanG Dream! 少女樂團派對！',
             zhs: 'BanG Dream! 少女乐团派对！',
         },
         author: {
             en: 'WindowsSov8forUs',
+            zht: 'WindowsSov8forUs',
             zhs: 'WindowsSov8forUs',
         },
         tags: [],
         description: {
             en: description,
+            zht: descriptionZht,
             zhs: descriptionZhs,
         },
     }
