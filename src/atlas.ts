@@ -1,4 +1,4 @@
-import type { SkinData, SkinDataSprite } from '@sonolus/core'
+import { SkinSpriteName, type SkinData, type SkinDataSprite } from '@sonolus/core'
 import { getPixel, setPixel, toSharp } from './image.js'
 import type { PackedAtlas, PackedSprite, SpriteAsset } from './types.js'
 
@@ -161,7 +161,11 @@ function fieldPackingOrder(sprite: SpriteAsset): number {
     if (sprite.names.includes('bandori:bg_line_rhythm')) return 0
     if (sprite.names.includes('bandori:game_play_line')) return 1
     if (sprite.names.includes('bandori:game_play_line_skill_adjust_effect')) return 2
-    return 3
+    if (sprite.names.some(isStageName)) return 3
+    if (sprite.names.some(isLaneName)) return 4
+    if (sprite.names.includes(SkinSpriteName.JudgmentLine)) return 5
+    if (sprite.names.includes(SkinSpriteName.NoteSlot)) return 6
+    return 7
 }
 
 function packingRowGroup(sprite: SpriteAsset): string {
@@ -228,8 +232,43 @@ function isDirectionalName(name: string): boolean {
 }
 
 function isFieldName(name: string): boolean {
-    return name === 'bandori:bg_line_rhythm' || name === 'bandori:game_play_line' || name === 'bandori:game_play_line_skill_adjust_effect'
+    return (
+        name === 'bandori:bg_line_rhythm' ||
+        name === 'bandori:game_play_line' ||
+        name === 'bandori:game_play_line_skill_adjust_effect' ||
+        standardFieldNames.has(name)
+    )
 }
+
+function isStageName(name: string): boolean {
+    return name.startsWith('#STAGE_')
+}
+
+function isLaneName(name: string): boolean {
+    return name === SkinSpriteName.Lane || name === SkinSpriteName.LaneSeamless || name === SkinSpriteName.LaneAlternative || name === SkinSpriteName.LaneAlternativeSeamless
+}
+
+const standardFieldNames = new Set<string>([
+    SkinSpriteName.StageMiddle,
+    SkinSpriteName.StageLeftBorder,
+    SkinSpriteName.StageLeftBorderSeamless,
+    SkinSpriteName.StageRightBorder,
+    SkinSpriteName.StageRightBorderSeamless,
+    SkinSpriteName.StageTopBorder,
+    SkinSpriteName.StageTopBorderSeamless,
+    SkinSpriteName.StageBottomBorder,
+    SkinSpriteName.StageBottomBorderSeamless,
+    SkinSpriteName.StageTopLeftCorner,
+    SkinSpriteName.StageTopRightCorner,
+    SkinSpriteName.StageBottomLeftCorner,
+    SkinSpriteName.StageBottomRightCorner,
+    SkinSpriteName.Lane,
+    SkinSpriteName.LaneSeamless,
+    SkinSpriteName.LaneAlternative,
+    SkinSpriteName.LaneAlternativeSeamless,
+    SkinSpriteName.JudgmentLine,
+    SkinSpriteName.NoteSlot,
+])
 
 function padImage(image: SpriteAsset['image']): SpriteAsset['image'] {
     const output: SpriteAsset['image'] = {
